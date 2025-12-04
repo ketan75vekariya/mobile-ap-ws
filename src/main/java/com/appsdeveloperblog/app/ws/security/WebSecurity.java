@@ -8,8 +8,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -25,16 +27,22 @@ public class WebSecurity {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http)
+    SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager, AppProperties appProperties)
             throws Exception {
+    	
+    	//AuthenticationFilter authFilter = new AuthenticationFilter(authenticationManager);
 
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/users").permitAll()
+                .requestMatchers(HttpMethod.POST, SecurityConstants.SIGH_UP_URL).permitAll()
                 .anyRequest().authenticated()
-            );
-
+            )
+     // add custom authentication filter at the appropriate place
+        .addFilterBefore(getAuthenticationFilter(authenticationManager,appProperties), UsernamePasswordAuthenticationFilter.class)
+        .addFilter(new AuthorizationFilter(authenticationManager,appProperties))
+        .sessionManagement(session -> 
+        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
     }
 
@@ -49,5 +57,11 @@ public class WebSecurity {
             .passwordEncoder(bCryptPasswordEncoder);
 
         return authBuilder.build();
+    }
+    
+    public AuthenticationFilter getAuthenticationFilter(AuthenticationManager authenticationManager, AppProperties appProperties) throws Exception{
+    	final AuthenticationFilter filter = new AuthenticationFilter(authenticationManager, appProperties);
+    	filter.setFilterProcessesUrl("/users/login");
+    	return filter;
     }
 }
