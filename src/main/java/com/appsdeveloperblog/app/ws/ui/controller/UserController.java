@@ -2,7 +2,6 @@ package com.appsdeveloperblog.app.ws.ui.controller;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.appsdeveloperblog.app.ws.exceptions.UserServiceException;
 import com.appsdeveloperblog.app.ws.service.UserService;
 import com.appsdeveloperblog.app.ws.shared.dto.UserDto;
 import com.appsdeveloperblog.app.ws.ui.model.request.UserDetailsRequestModel;
+import com.appsdeveloperblog.app.ws.ui.model.response.ErrorMessages;
 import com.appsdeveloperblog.app.ws.ui.model.response.UserRest;
 
 @RestController
@@ -24,8 +25,7 @@ public class UserController {
 	@Autowired
 	UserService userService;
 	
-	@GetMapping(path="/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
-			produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+	@GetMapping(path="/{id}")
 	public UserRest getUser(@PathVariable String id) {
 		UserRest returnValue = new UserRest();
 		UserDto userDto = userService.getUserByUserId(id);
@@ -33,11 +33,14 @@ public class UserController {
 		return returnValue;
 	}
 	
-	@PostMapping(
-			consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
-			produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-	public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails) {
+	@PostMapping()
+	public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails) throws Exception {
 		UserRest returnValue = new UserRest();
+		if(userDetails.getFirstName().isEmpty()
+				|| userDetails.getLastName().isEmpty()
+				|| userDetails.getEmail().isEmpty()
+				|| userDetails.getPassword().isEmpty())
+			throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
 		UserDto userDto = new UserDto();
 		BeanUtils.copyProperties(userDetails, userDto);
 		UserDto createdUser = userService.createUser(userDto);

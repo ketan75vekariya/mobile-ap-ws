@@ -38,6 +38,11 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         //If TOKEN_SECRET is plain text instead, use this line instead of the two above:
          this.signingKey = Keys.hmacShaKeyFor(appProperties.getTokenSecret().getBytes(StandardCharsets.UTF_8));
+         setAuthenticationFailureHandler((request, response, exception) -> {
+             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+             response.setContentType("application/json");
+             response.getWriter().write("{\"error\":\"Authentication failed\"}");
+         });
     }
 
     @Override
@@ -54,7 +59,16 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
                             new ArrayList<>())
             );
         } catch (IOException e) {
-            throw new RuntimeException(e);
+        	 // Bad JSON or unreadable request
+            try {
+                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                res.setContentType("application/json");
+                res.getWriter().write("{\"error\":\"Invalid login request body\"}");
+                res.getWriter().flush();
+            } catch (IOException ioException) {
+                // log
+            }
+            return null; // stop filter chain for this request
         }
     }
 
