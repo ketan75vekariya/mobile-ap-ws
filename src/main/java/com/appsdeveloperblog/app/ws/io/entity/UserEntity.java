@@ -1,11 +1,14 @@
 package com.appsdeveloperblog.app.ws.io.entity;
 
 import java.io.Serializable;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 
 
@@ -36,9 +39,13 @@ public class UserEntity implements Serializable {
 	
 	private String emailVerificationToken;
 	
+	
+	
 	@Column(nullable = false)
 	private Boolean emailVerificationStatus = false;
 
+	@OneToMany(mappedBy="userDetails", cascade=CascadeType.ALL)
+	private List<AddressEntity> addresses;
 	
 	public long getId() {
 		return id;
@@ -102,6 +109,14 @@ public class UserEntity implements Serializable {
 
 	public void setEmailVerificationStatus(Boolean emailVerificationStatus) {
 		this.emailVerificationStatus = emailVerificationStatus;
+	}
+
+	public List<AddressEntity> getAddresses() {
+		return addresses;
+	}
+
+	public void setAddresses(List<AddressEntity> addresses) {
+		this.addresses = addresses;
 	}
 	
 }
